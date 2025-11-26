@@ -6,8 +6,6 @@
     <title>Student Records Dashboard</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons CDN -->
-    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         /* Custom styles for professional appearance and smooth transitions */
         body { font-family: 'Inter', sans-serif; background-color: #f7f9fc; }
@@ -22,6 +20,9 @@
         .table-container table { border-collapse: separate; }
         .table-header th { position: sticky; top: 0; background-color: #e0e7ff; z-index: 10; }
         .admin-email-text { font-family: monospace; }
+        /* Keyframe for spin animation for compatibility */
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .animate-spin { animation: spin 1s linear infinite; }
     </style>
 </head>
 <body>
@@ -64,7 +65,7 @@
         let filterSection = 'ALL';
         let loginStatus = { message: 'Enter the Admin Secret Key to access the dashboard.', success: false };
         
-        // --- Utility Functions ---
+        // --- Utility Functions (Essential Icons as Inline SVGs for reliability) ---
         
         const generateId = () => `S${String(students.length + 1).padStart(3, '0')}-${Date.now()}`;
         const getImageUrl = (originalUrl) => {
@@ -75,12 +76,35 @@
             }
             return originalUrl;
         };
-        const getIcon = (name, className = 'w-5 h-5') => {
-            if (!window.lucide || !window.lucide.createIcons()[name]) return null;
-            const iconElement = window.lucide.createIcons()[name];
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = iconElement.toSvg({ class: className });
-            return tempDiv.firstChild;
+
+        const getSvgIcon = (name, className = 'w-5 h-5', stroke = 'currentColor') => {
+            const icons = {
+                // Login Icons
+                'Mail': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>`,
+                'Lock': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+                'Key': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M10 20L19 11"/><path d="M18 13v6"/><path d="M12 21h4"/><path d="M16 11l-2-2"/></svg>`,
+                'LogIn': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>`,
+                'Loader2': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`,
+                
+                // Dashboard Icons
+                'Users': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+                'User': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+                'LogOut': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`,
+                'AlertTriangle': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+                'Search': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+                'Plus': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+                'Edit': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+                'Trash2': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`,
+                
+                // Form/Detail Icons
+                'GraduationCap': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M21.42 10.96v7.94a.5.5 0 0 1-.77.41L12 14.5 3.35 19.31a.5.5 0 0 1-.77-.41v-7.94"/><path d="m22 9-10-6-10 6v3.69a2 2 0 0 0 .76 1.58l9.14 5.38a2 2 0 0 0 2.15 0l9.14-5.38a2 2 0 0 0 .76-1.58V9z"/><path d="M8.5 2.5v13"/></svg>`,
+                'Zap': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
+                'Calendar': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
+                'HardHat': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M11 17L12 17"/><path d="M12 17L13 17"/><path d="M22 17L12 3L2 17L3 18L21 18Z"/><path d="M16 17V17.5A1.5 1.5 0 0 0 17.5 19H18"/><path d="M8 17V17.5A1.5 1.5 0 0 1 6.5 19H6"/></svg>`,
+                'Phone': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M22 16.92v3.08a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-3.71-2.92 19.5 19.5 0 0 1-2.92-3.71A19.79 19.79 0 0 1 2 4.18 2 2 0 0 1 4.92 2h3.08a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`,
+                'X': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+            };
+            return icons[name] ? icons[name].replace(new RegExp(`class="${className}"`), `class="${className}"`) : '';
         };
 
         const hashSecretKey = async (key) => {
@@ -136,8 +160,8 @@
             renderApp();
         };
 
-        // --- Data Persistence and CRUD ---
-
+        // --- Data Persistence and CRUD (Logic remains the same) ---
+        
         const mockFetchStudents = () => {
             return new Promise(resolve => {
                 setTimeout(() => { 
@@ -275,6 +299,7 @@
         };
 
         // --- Event Handlers (UI) ---
+        // These are bound to window scope in renderApp()
 
         const handleFilterChange = (e) => {
             const { id, value } = e.target;
@@ -320,98 +345,53 @@
             handleSaveStudent(data);
         };
 
-        // --- Rendering Helpers (Functions defined inline for direct template use) ---
-
-        const renderImageDisplay = (url, type, className, style) => {
-            const finalUrl = getImageUrl(url);
-            const iconName = type === 'photo' ? 'User' : 'Zap';
-
-            const container = document.createElement('div');
-            container.className = `${className} bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center text-xs text-gray-500 overflow-hidden`;
+        // --- Core Render Function ---
+        
+        const renderApp = () => {
+            const appDiv = document.getElementById('app');
             
-            const img = document.createElement('img');
-            img.src = finalUrl;
-            img.alt = `${type} of student`;
-            img.className = className.replace('flex items-center justify-center text-xs text-gray-500', '') + ' object-cover';
-            img.style.cssText = style || '';
-            img.loading = 'lazy';
+            // 1. Bind global functions for inline HTML event handlers (CRITICAL)
+            window.handleFilterChange = handleFilterChange;
+            window.openAddForm = openAddForm;
+            window.openEditForm = openEditForm;
+            window.closeForm = closeForm;
+            window.handleDeleteStudent = handleDeleteStudent;
+            window.handleFormSubmit = handleFormSubmit;
+            window.handleLogin = handleLogin;
+            window.handleLogout = handleLogout;
             
-            let errorFlag = false;
-            
-            img.onerror = () => {
-                if (!errorFlag) {
-                    errorFlag = true;
-                    container.innerHTML = '';
-                    const icon = getIcon(iconName, 'w-5 h-5');
-                    if (icon) container.appendChild(icon);
-                    else container.textContent = type === 'photo' ? 'P' : 'S';
-                    container.classList.add('p-1');
-                }
-            };
+            let mainContent;
 
-            if (url && url.length > 5) {
-                container.appendChild(img);
+            // 2. Determine Auth State and Render
+            if (isAuthenticated) {
+                 mainContent = `
+                    ${renderHeader()}
+                    ${renderAlert()}
+                    ${renderControls()}
+                    ${renderTable()}
+                    ${isFormOpen ? renderFormModal() : ''}
+                `;
             } else {
-                const icon = getIcon(iconName, 'w-5 h-5');
-                if (icon) container.appendChild(icon);
-                else container.textContent = type === 'photo' ? 'P' : 'S';
-                container.classList.add('p-1');
+                 mainContent = renderLoginModal();
             }
-
-            return container.outerHTML;
+            
+            appDiv.innerHTML = mainContent;
         };
 
-        // All subsequent render functions (renderTable, renderHeader, renderLoginModal, etc.) are complex string templates
-        // and need the utility functions (like getIcon) to be globally accessible for the event handlers. 
-        // We will define them as nested templates to ensure scope closure.
+        // --- Rendering Templates ---
 
-        const renderControls = () => {
-            const searchIcon = getIcon('Search', 'w-5 h-5 text-indigo-400');
-            const plusIcon = getIcon('Plus', 'w-5 h-5 mr-2');
+        const renderImageDisplay = (url, type, className) => {
+            const finalUrl = getImageUrl(url);
+            const defaultText = type === 'photo' ? 'P' : 'S';
 
-            return `
-                <div class="bg-white p-6 rounded-2xl shadow-lg mb-8 border border-gray-100">
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div class="md:col-span-2">
-                            <label for="search" class="block text-sm font-medium text-gray-700">Quick Search</label>
-                            <div class="relative mt-1">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    ${searchIcon ? searchIcon.outerHTML : ''}
-                                </div>
-                                <input id="search" type="text" value="${searchTerm}" oninput="handleFilterChange(event)"
-                                    placeholder="Search ID, Name, Roll No, or Phone No..." 
-                                    class="w-full p-2 pl-10 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition duration-150 ease-in-out shadow-inner"
-                                />
-                            </div>
-                        </div>
+            // Create container HTML string
+            let imgTag = `<img src="${finalUrl}" alt="${type}" class="${className} object-cover" loading="lazy" onerror="this.outerHTML='<div class=\\'${className} bg-gray-200 border-2 border-dashed border-gray-300 flex items-center justify-center text-xs text-gray-500\\'>${defaultText}</div>'">`;
+            
+            if (!url || url.length < 5) {
+                imgTag = `<div class='${className} bg-gray-200 border-2 border-dashed border-gray-300 flex items-center justify-center text-xs text-gray-500'>${defaultText}</div>`;
+            }
 
-                        <div>
-                            <label for="filterClass" class="block text-sm font-medium text-gray-700">Filter by Class</label>
-                            <select id="filterClass" value="${filterClass}" onchange="handleFilterChange(event)"
-                                class="mt-1 block w-full py-2.5 px-3 border-2 border-gray-300 bg-white rounded-xl shadow-inner focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
-                                <option value="ALL">-- All Classes --</option>
-                                ${CLASS_OPTIONS.map(c => `<option value="${c}" ${filterClass === c ? 'selected' : ''}>Class ${c}</option>`).join('')}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label for="filterSection" class="block text-sm font-medium text-gray-700">Filter by Section</label>
-                            <select id="filterSection" value="${filterSection}" onchange="handleFilterChange(event)"
-                                class="mt-1 block w-full py-2.5 px-3 border-2 border-gray-300 bg-white rounded-xl shadow-inner focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
-                                <option value="ALL">-- All Sections --</option>
-                                ${SECTION_OPTIONS.map(s => `<option value="${s}" ${filterSection === s ? 'selected' : ''}>${s}</option>`).join('')}
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="flex justify-end mt-5">
-                        <button onclick="openAddForm()" class="btn-shadow px-4 py-2 rounded-xl text-sm font-semibold transition duration-300 ease-in-out flex items-center justify-center shadow-lg hover:shadow-xl bg-green-600 text-white hover:bg-green-700 focus:ring-4 focus:ring-green-500/50">
-                            ${plusIcon ? plusIcon.outerHTML : ''}
-                            Add New Student Record
-                        </button>
-                    </div>
-                </div>
-            `;
+            return imgTag;
         };
         
         const renderTable = () => {
@@ -428,16 +408,16 @@
                 return (a.rollNo || '').localeCompare(b.rollNo || '');
             });
             
-            const loadingIcon = getIcon('Loader2', 'w-9 h-9 animate-spin mr-4');
-            const editIcon = getIcon('Edit', 'w-4 h-4');
-            const trashIcon = getIcon('Trash2', 'w-4 h-4');
-            const phoneIcon = getIcon('Phone', 'w-3.5 h-3.5 mr-1 text-indigo-500');
-            const calendarIcon = getIcon('Calendar', 'w-3.5 h-3.5 mr-1 text-indigo-500');
+            const loadingIcon = `<svg class="animate-spin w-9 h-9 mr-4 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+            const editIcon = getSvgIcon('Edit', 'w-4 h-4', 'currentColor');
+            const trashIcon = getSvgIcon('Trash2', 'w-4 h-4', 'white');
+            const phoneIcon = getSvgIcon('Phone', 'w-3.5 h-3.5 mr-1 text-indigo-500');
+            const calendarIcon = getSvgIcon('Calendar', 'w-3.5 h-3.5 mr-1 text-indigo-500');
 
             if (isLoading && filtered.length === 0) {
                 return `
                     <div class="flex items-center justify-center p-16 text-indigo-600">
-                        ${loadingIcon ? loadingIcon.outerHTML : ''}
+                        ${loadingIcon}
                         <p class="text-xl font-medium">Loading student data...</p>
                     </div>
                 `;
@@ -483,8 +463,8 @@
                                     <td class="px-4 py-3 whitespace-nowrap text-lg font-extrabold text-green-700">${student.rollNo}</td>
                                     
                                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden sm:table-cell">
-                                        <div class="flex items-center text-xs text-gray-700">${phoneIcon ? phoneIcon.outerHTML : ''}${student.phoneNumber}</div>
-                                        <div class="flex items-center text-xs text-gray-500 mt-1">${calendarIcon ? calendarIcon.outerHTML : ''}${student.dateOfBirth || 'N/A'}</div>
+                                        <div class="flex items-center text-xs text-gray-700">${phoneIcon}${student.phoneNumber}</div>
+                                        <div class="flex items-center text-xs text-gray-500 mt-1">${calendarIcon}${student.dateOfBirth || 'N/A'}</div>
                                     </td>
                                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 hidden md:table-cell">${student.fatherName}</td>
                                     <td class="px-4 py-3 whitespace-nowrap">
@@ -495,12 +475,12 @@
                                             <button onclick="openEditForm(${serializedStudent})" 
                                                     class="p-2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 transition duration-150"
                                                     title="Edit">
-                                                ${editIcon ? editIcon.outerHTML : ''}
+                                                ${editIcon}
                                             </button>
                                             <button onclick="handleDeleteStudent('${student.id}')"
                                                     class="p-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition duration-150"
                                                     title="Delete">
-                                                ${trashIcon ? trashIcon.outerHTML : ''}
+                                                ${trashIcon}
                                             </button>
                                         </div>
                                     </td>
@@ -514,22 +494,22 @@
         };
 
         const renderHeader = () => { 
-            const logoutIcon = getIcon('LogOut', 'w-4 h-4 ml-2');
-            const icon = getIcon('Users', 'w-10 h-10 mr-3 text-indigo-600');
-            const userIcon = getIcon('User', 'w-4 h-4 mr-1');
+            const logoutIcon = getSvgIcon('LogOut', 'w-4 h-4 ml-2', 'white');
+            const icon = getSvgIcon('Users', 'w-10 h-10 mr-3 text-indigo-600');
+            const userIcon = getSvgIcon('User', 'w-4 h-4 mr-1');
 
             return `
                 <header class="bg-white shadow-xl rounded-3xl p-6 mb-8 border-t-4 border-indigo-600">
                     <div class="flex flex-col sm:flex-row justify-between items-start">
                         <h1 class="text-4xl font-extrabold text-gray-900 flex items-center mb-4 sm:mb-0">
-                            ${icon ? icon.outerHTML : ''}
+                            ${icon}
                             <span class="header-gradient">Student Records Dashboard</span>
                         </h1>
                         <div class="flex items-center text-sm text-gray-500">
-                            ${userIcon ? userIcon.outerHTML : ''}
+                            ${userIcon}
                             Admin: <span class="font-mono ml-1 px-3 py-1 bg-indigo-100/50 text-indigo-800 rounded-lg text-xs shadow-inner admin-email-text">${ADMIN_EMAIL}</span>
                             <button onclick="handleLogout()" class="ml-4 px-3 py-1 bg-red-500 text-white text-xs rounded-lg hover:bg-red-600 transition duration-150 flex items-center btn-shadow">
-                                Logout ${logoutIcon ? logoutIcon.outerHTML : ''}
+                                Logout ${logoutIcon}
                             </button>
                         </div>
                     </div>
@@ -544,78 +524,70 @@
             const message = isError 
                 ? `API ERROR: ${error}`
                 : `MOCK DATA MODE: Data is stored locally in your browser. Replace the 'GOOGLE_SHEET_API_URL' constant to connect to your real Google Sheet.`;
-            const icon = getIcon('AlertTriangle', 'w-5 h-5 mr-2');
+            const icon = getSvgIcon('AlertTriangle', 'w-5 h-5 mr-2');
 
             return `
                 <div class="px-6 py-4 rounded-xl relative mb-6 font-semibold shadow-md ${className}" role="alert">
                     <p class="flex items-center">
-                        ${icon ? icon.outerHTML : ''}
+                        ${icon}
                         ${message}
                     </p>
                 </div>
             `;
         };
 
-        const renderLoginModal = () => {
-            const mailIcon = getIcon('Mail', 'w-5 h-5 mr-2');
-            const lockIcon = getIcon('Lock', 'w-5 h-5 mr-2');
-            const keyIcon = getIcon('Key', 'w-10 h-10 text-indigo-500 mb-4');
-            const loadingIcon = getIcon('Loader2', 'w-5 h-5 mr-2 animate-spin');
-
-            let alertClass = 'bg-gray-50 text-gray-700 border-gray-200';
-            if (loginStatus.message.includes('Invalid') || loginStatus.message.includes('denied') || loginStatus.message.includes('error')) {
-                 alertClass = 'bg-red-100 text-red-700 border-red-400';
-            } else if (loginStatus.message.includes('successful')) {
-                 alertClass = 'bg-green-100 text-green-700 border-green-400';
-            }
-
+        const renderControls = () => {
+            const searchIcon = getSvgIcon('Search', 'w-5 h-5 text-indigo-400');
+            const plusIcon = getSvgIcon('Plus', 'w-5 h-5 mr-2', 'white');
 
             return `
-                <div class="fixed inset-0 bg-gray-900/90 z-50 flex items-center justify-center p-4">
-                    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 text-center transition-all duration-300 transform scale-100 border-t-8 border-indigo-600">
-                        ${keyIcon ? keyIcon.outerHTML : ''}
-                        <h2 class="text-3xl font-extrabold text-gray-900 mb-2">Admin Access Required</h2>
-                        <p class="text-gray-500 mb-6">Enter your Admin Secret Key to proceed.</p>
-                        
-                        <div class="p-3 mb-6 rounded-xl border ${alertClass}">
-                            <p class="text-sm font-medium">
-                                ${loginStatus.message}
-                            </p>
+                <div class="bg-white p-6 rounded-2xl shadow-lg mb-8 border border-gray-100">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="md:col-span-2">
+                            <label for="search" class="block text-sm font-medium text-gray-700">Quick Search</label>
+                            <div class="relative mt-1">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    ${searchIcon}
+                                </div>
+                                <input id="search" type="text" value="${searchTerm}" oninput="handleFilterChange(event)"
+                                    placeholder="Search ID, Name, Roll No, or Phone No..." 
+                                    class="w-full p-2 pl-10 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition duration-150 ease-in-out shadow-inner"
+                                />
+                            </div>
                         </div>
 
-                        <form onsubmit="handleLogin(event)">
-                            <div class="relative mb-4">
-                                <input id="admin-email" type="email" value="${ADMIN_EMAIL}" readonly 
-                                    class="w-full p-3 pl-12 border-2 border-gray-300 bg-gray-100 rounded-xl text-lg font-mono text-gray-800 focus:outline-none cursor-not-allowed" 
-                                />
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    ${mailIcon ? mailIcon.outerHTML : ''}
-                                </div>
-                            </div>
+                        <div>
+                            <label for="filterClass" class="block text-sm font-medium text-gray-700">Filter by Class</label>
+                            <select id="filterClass" value="${filterClass}" onchange="handleFilterChange(event)"
+                                class="mt-1 block w-full py-2.5 px-3 border-2 border-gray-300 bg-white rounded-xl shadow-inner focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                                <option value="ALL">-- All Classes --</option>
+                                ${CLASS_OPTIONS.map(c => `<option value="${c}" ${filterClass === c ? 'selected' : ''}>Class ${c}</option>`).join('')}
+                            </select>
+                        </div>
 
-                            <div class="relative mb-6">
-                                <input id="secret-key" type="password" placeholder="Enter Secret Key" required
-                                    class="w-full p-3 pl-12 border-2 border-indigo-300 rounded-xl text-lg text-gray-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition" 
-                                />
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    ${lockIcon ? lockIcon.outerHTML : ''}
-                                </div>
-                                <p class="text-xs text-gray-500 mt-2 text-left">The default key is <span class="font-bold admin-email-text">AdminSecretKey2025!</span></p>
-                            </div>
-                            
-                            <button type="submit" class="btn-shadow w-full py-3 bg-indigo-600 text-white hover:bg-indigo-700 flex items-center justify-center rounded-xl text-lg font-semibold" ${isLoading ? 'disabled' : ''}>
-                                ${isLoading ? loadingIcon.outerHTML : (getIcon('LogIn', 'w-5 h-5 mr-2').outerHTML)}
-                                ${isLoading ? 'Loading...' : 'Verify Key & Login'}
-                            </button>
-                        </form>
+                        <div>
+                            <label for="filterSection" class="block text-sm font-medium text-gray-700">Filter by Section</label>
+                            <select id="filterSection" value="${filterSection}" onchange="handleFilterChange(event)"
+                                class="mt-1 block w-full py-2.5 px-3 border-2 border-gray-300 bg-white rounded-xl shadow-inner focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                                <option value="ALL">-- All Sections --</option>
+                                ${SECTION_OPTIONS.map(s => `<option value="${s}" ${filterSection === s ? 'selected' : ''}>${s}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end mt-5">
+                        <button onclick="openAddForm()" class="btn-shadow px-4 py-2 rounded-xl text-sm font-semibold transition duration-300 ease-in-out flex items-center justify-center shadow-lg hover:shadow-xl bg-green-600 text-white hover:bg-green-700 focus:ring-4 focus:ring-green-500/50">
+                            ${plusIcon}
+                            Add New Student Record
+                        </button>
                     </div>
                 </div>
             `;
         };
 
-        const renderFormInput = (label, id, value, placeholder, required, icon, disabled = false, type = 'text', className = '') => {
-            const iconHtml = icon ? `<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">${icon.outerHTML}</div>` : '';
-            const padding = icon ? 'pl-10' : 'pl-3';
+        const renderFormInput = (label, id, value, placeholder, required, iconName, disabled = false, type = 'text', className = '') => {
+            const iconHtml = iconName ? `<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">${getSvgIcon(iconName, 'w-5 h-5 text-indigo-400')}</div>` : '';
+            const padding = iconName ? 'pl-10' : 'pl-3';
             const disabledClass = disabled ? 'bg-gray-100 cursor-not-allowed' : '';
             
             return `
@@ -650,16 +622,9 @@
             const isEditMode = !!student.id && students.some(s => s.id === student.id);
             const title = isEditMode ? 'Edit Student Record' : 'Add New Student';
             
-            const studentIcon = getIcon('GraduationCap', 'w-5 h-5 text-indigo-400');
-            const userIcon = getIcon('User', 'w-5 h-5 text-indigo-400');
-            const zapIcon = getIcon('Zap', 'w-5 h-5 text-indigo-400');
-            const calendarIcon = getIcon('Calendar', 'w-5 h-5 text-indigo-400');
-            const hardhatIcon = getIcon('HardHat', 'w-5 h-5 text-indigo-400');
-            const phoneIcon = getIcon('Phone', 'w-5 h-5 text-indigo-400');
-            const mailIcon = getIcon('Mail', 'w-5 h-5 text-indigo-400');
-            const editIcon = getIcon('Edit', 'w-5 h-5 mr-1');
-            const plusIcon = getIcon('Plus', 'w-5 h-5 mr-1');
-            const closeIcon = getIcon('X', 'w-6 h-6');
+            const editIcon = getSvgIcon('Edit', 'w-5 h-5 mr-1', 'white');
+            const plusIcon = getSvgIcon('Plus', 'w-5 h-5 mr-1', 'white');
+            const closeIcon = getSvgIcon('X', 'w-6 h-6');
 
             const selectOptionsClass = CLASS_OPTIONS.map(c => ({ value: c, label: `Class ${c}` }));
             const selectOptionsSection = SECTION_OPTIONS.map(s => ({ value: s, label: s }));
@@ -672,24 +637,24 @@
                         <div class="flex justify-between items-start mb-6 border-b pb-3">
                             <h2 class="text-3xl font-extrabold text-indigo-700">${title}</h2>
                             <button type="button" onclick="closeForm()" class="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition duration-150 shadow-md">
-                                ${closeIcon ? closeIcon.outerHTML : ''}
+                                ${closeIcon}
                             </button>
                         </div>
 
                         <form id="student-form" onsubmit="handleFormSubmit(event)" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            ${renderFormInput('Student ID', 'studentId', student.studentId, 'Unique Student ID', true, studentIcon, isEditMode)}
-                            ${renderFormInput('Student Name', 'studentName', student.studentName, 'Full Name', true, userIcon)}
+                            ${renderFormInput('Student ID', 'studentId', student.studentId, 'Unique Student ID', true, 'GraduationCap', isEditMode)}
+                            ${renderFormInput('Student Name', 'studentName', student.studentName, 'Full Name', true, 'User')}
 
-                            ${renderFormInput('Roll No', 'rollNo', student.rollNo, 'Roll Number', false, zapIcon)}
-                            ${renderFormInput('Date of Birth', 'dateOfBirth', student.dateOfBirth, '', false, calendarIcon, false, 'date')}
+                            ${renderFormInput('Roll No', 'rollNo', student.rollNo, 'Roll Number', false, 'Zap')}
+                            ${renderFormInput('Date of Birth', 'dateOfBirth', student.dateOfBirth, '', false, 'Calendar', false, 'date')}
 
                             ${renderFormSelect('Class', 'className', student.className, selectOptionsClass)}
                             ${renderFormSelect('Section', 'section', student.section, selectOptionsSection)}
 
-                            ${renderFormInput("Father's Name", 'fatherName', student.fatherName, "Father's Name", false, hardhatIcon)}
-                            ${renderFormInput('Phone Number', 'phoneNumber', student.phoneNumber, 'e.g., 919876543210', false, phoneIcon, false, 'tel')}
+                            ${renderFormInput("Father's Name", 'fatherName', student.fatherName, "Father's Name", false, 'HardHat')}
+                            ${renderFormInput('Phone Number', 'phoneNumber', student.phoneNumber, 'e.g., 919876543210', false, 'Phone', false, 'tel')}
                             
-                            ${renderFormInput('Email ID', 'emailId', student.emailId, 'student@example.com', false, mailIcon, false, 'email', 'md:col-span-2')}
+                            ${renderFormInput('Email ID', 'emailId', student.emailId, 'student@example.com', false, 'Mail', false, 'email', 'md:col-span-2')}
 
                             ${renderFormInput('Photo URL (Google Drive/Public)', 'photoUrl', student.photoUrl, 'Must be a direct/public URL', false, null, false, 'url', 'md:col-span-2')}
                             ${renderFormInput('Signature URL (Google Drive/Public)', 'signatureUrl', student.signatureUrl, 'Must be a direct/public URL', false, null, false, 'url', 'md:col-span-2')}
@@ -697,7 +662,7 @@
                             <div class="md:col-span-2 flex justify-end space-x-3 pt-6 border-t mt-4 border-gray-200">
                                 <button type="button" onclick="closeForm()" class="btn-shadow bg-gray-200 text-gray-800 hover:bg-gray-300">Cancel</button>
                                 <button type="submit" ${buttonDisabled} class="btn-shadow ${isSaving ? 'opacity-60 cursor-not-allowed' : ''} px-4 py-2 rounded-xl text-sm font-semibold transition duration-300 ease-in-out flex items-center justify-center shadow-lg hover:shadow-xl bg-indigo-600 text-white hover:bg-indigo-700">
-                                    ${isSaving ? getIcon('Loader2', 'w-5 h-5 animate-spin mr-1').outerHTML : (isEditMode ? getIcon('Edit', 'w-5 h-5 mr-1').outerHTML : getIcon('Plus', 'w-5 h-5 mr-1').outerHTML)}
+                                    ${isSaving ? getSvgIcon('Loader2', 'w-5 h-5 animate-spin mr-1', 'white') : (isEditMode ? editIcon : plusIcon)}
                                     ${isSaving ? 'Saving...' : (isEditMode ? 'Update Record' : 'Add Record')}
                                 </button>
                             </div>
@@ -707,6 +672,63 @@
             `;
         };
 
+
+        const renderLoginModal = () => {
+            const mailIcon = getSvgIcon('Mail', 'w-5 h-5 mr-2', 'currentColor');
+            const lockIcon = getSvgIcon('Lock', 'w-5 h-5 mr-2', 'currentColor');
+            const keyIcon = getSvgIcon('Key', 'w-10 h-10 text-indigo-500 mb-4', 'currentColor');
+            const loadingIcon = getSvgIcon('Loader2', 'w-5 h-5 mr-2 animate-spin', 'white');
+
+            let alertClass = 'bg-gray-50 text-gray-700 border-gray-200';
+            if (loginStatus.message.includes('Invalid') || loginStatus.message.includes('denied') || loginStatus.message.includes('error')) {
+                 alertClass = 'bg-red-100 text-red-700 border-red-400';
+            } else if (loginStatus.message.includes('successful')) {
+                 alertClass = 'bg-green-100 text-green-700 border-green-400';
+            }
+
+
+            return `
+                <div class="fixed inset-0 bg-gray-900/90 z-50 flex items-center justify-center p-4">
+                    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 text-center transition-all duration-300 transform scale-100 border-t-8 border-indigo-600">
+                        ${keyIcon}
+                        <h2 class="text-3xl font-extrabold text-gray-900 mb-2">Admin Access Required</h2>
+                        <p class="text-gray-500 mb-6">Enter your Admin Secret Key to proceed.</p>
+                        
+                        <div class="p-3 mb-6 rounded-xl border ${alertClass}">
+                            <p class="text-sm font-medium">
+                                ${loginStatus.message}
+                            </p>
+                        </div>
+
+                        <form onsubmit="handleLogin(event)">
+                            <div class="relative mb-4">
+                                <input id="admin-email" type="email" value="${ADMIN_EMAIL}" readonly 
+                                    class="w-full p-3 pl-12 border-2 border-gray-300 bg-gray-100 rounded-xl text-lg font-mono text-gray-800 focus:outline-none cursor-not-allowed" 
+                                />
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    ${mailIcon}
+                                </div>
+                            </div>
+
+                            <div class="relative mb-6">
+                                <input id="secret-key" type="password" placeholder="Enter Secret Key" required
+                                    class="w-full p-3 pl-12 border-2 border-indigo-300 rounded-xl text-lg text-gray-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition" 
+                                />
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    ${lockIcon}
+                                </div>
+                                <p class="text-xs text-gray-500 mt-2 text-left">The default key is <span class="font-bold admin-email-text">AdminSecretKey2025!</span></p>
+                            </div>
+                            
+                            <button type="submit" class="btn-shadow w-full py-3 bg-indigo-600 text-white hover:bg-indigo-700 flex items-center justify-center rounded-xl text-lg font-semibold" ${isLoading ? 'disabled' : ''}>
+                                ${isLoading ? loadingIcon : getSvgIcon('LogIn', 'w-5 h-5 mr-2', 'white')}
+                                ${isLoading ? 'Loading...' : 'Verify Key & Login'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            `;
+        };
 
         // --- Final Execution ---
         
