@@ -65,7 +65,7 @@
         let filterSection = 'ALL';
         let loginStatus = { message: 'Enter the Admin Secret Key to access the dashboard.', success: false };
         
-        // --- Utility Functions (Essential Icons as Inline SVGs for reliability) ---
+        // --- Utility Functions ---
         
         const generateId = () => `S${String(students.length + 1).padStart(3, '0')}-${Date.now()}`;
         const getImageUrl = (originalUrl) => {
@@ -79,14 +79,11 @@
 
         const getSvgIcon = (name, className = 'w-5 h-5', stroke = 'currentColor') => {
             const icons = {
-                // Login Icons
                 'Mail': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>`,
                 'Lock': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
                 'Key': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M10 20L19 11"/><path d="M18 13v6"/><path d="M12 21h4"/><path d="M16 11l-2-2"/></svg>`,
                 'LogIn': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>`,
                 'Loader2': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`,
-                
-                // Dashboard Icons
                 'Users': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
                 'User': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
                 'LogOut': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`,
@@ -95,8 +92,6 @@
                 'Plus': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
                 'Edit': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
                 'Trash2': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`,
-                
-                // Form/Detail Icons
                 'GraduationCap': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><path d="M21.42 10.96v7.94a.5.5 0 0 1-.77.41L12 14.5 3.35 19.31a.5.5 0 0 1-.77-.41v-7.94"/><path d="m22 9-10-6-10 6v3.69a2 2 0 0 0 .76 1.58l9.14 5.38a2 2 0 0 0 2.15 0l9.14-5.38a2 2 0 0 0 .76-1.58V9z"/><path d="M8.5 2.5v13"/></svg>`,
                 'Zap': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
                 'Calendar': `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${className}"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
@@ -108,6 +103,9 @@
         };
 
         const hashSecretKey = async (key) => {
+            if (!crypto.subtle) {
+                 throw new Error("Cryptography API not available. Cannot hash key.");
+            }
             const encoder = new TextEncoder();
             const data = encoder.encode(key);
             const hashBuffer = await crypto.subtle.digest('SHA-256', data);
@@ -146,8 +144,9 @@
                     renderApp();
                 }
             } catch (e) {
-                console.error("Login error:", e);
-                loginStatus.message = `Authentication failed due to system error.`;
+                // Catch hashing failures
+                console.error("Login hash error:", e);
+                loginStatus.message = `System error during verification: ${e.message}.`;
                 renderApp();
             }
         };
@@ -161,7 +160,7 @@
         };
 
         // --- Data Persistence and CRUD (Logic remains the same) ---
-        
+
         const mockFetchStudents = () => {
             return new Promise(resolve => {
                 setTimeout(() => { 
@@ -299,7 +298,6 @@
         };
 
         // --- Event Handlers (UI) ---
-        // These are bound to window scope in renderApp()
 
         const handleFilterChange = (e) => {
             const { id, value } = e.target;
@@ -343,39 +341,6 @@
             }
 
             handleSaveStudent(data);
-        };
-
-        // --- Core Render Function ---
-        
-        const renderApp = () => {
-            const appDiv = document.getElementById('app');
-            
-            // 1. Bind global functions for inline HTML event handlers (CRITICAL)
-            window.handleFilterChange = handleFilterChange;
-            window.openAddForm = openAddForm;
-            window.openEditForm = openEditForm;
-            window.closeForm = closeForm;
-            window.handleDeleteStudent = handleDeleteStudent;
-            window.handleFormSubmit = handleFormSubmit;
-            window.handleLogin = handleLogin;
-            window.handleLogout = handleLogout;
-            
-            let mainContent;
-
-            // 2. Determine Auth State and Render
-            if (isAuthenticated) {
-                 mainContent = `
-                    ${renderHeader()}
-                    ${renderAlert()}
-                    ${renderControls()}
-                    ${renderTable()}
-                    ${isFormOpen ? renderFormModal() : ''}
-                `;
-            } else {
-                 mainContent = renderLoginModal();
-            }
-            
-            appDiv.innerHTML = mainContent;
         };
 
         // --- Rendering Templates ---
@@ -678,6 +643,7 @@
             const lockIcon = getSvgIcon('Lock', 'w-5 h-5 mr-2', 'currentColor');
             const keyIcon = getSvgIcon('Key', 'w-10 h-10 text-indigo-500 mb-4', 'currentColor');
             const loadingIcon = getSvgIcon('Loader2', 'w-5 h-5 mr-2 animate-spin', 'white');
+            const loginIcon = getSvgIcon('LogIn', 'w-5 h-5 mr-2', 'white');
 
             let alertClass = 'bg-gray-50 text-gray-700 border-gray-200';
             if (loginStatus.message.includes('Invalid') || loginStatus.message.includes('denied') || loginStatus.message.includes('error')) {
@@ -721,7 +687,7 @@
                             </div>
                             
                             <button type="submit" class="btn-shadow w-full py-3 bg-indigo-600 text-white hover:bg-indigo-700 flex items-center justify-center rounded-xl text-lg font-semibold" ${isLoading ? 'disabled' : ''}>
-                                ${isLoading ? loadingIcon : getSvgIcon('LogIn', 'w-5 h-5 mr-2', 'white')}
+                                ${isLoading ? loadingIcon : loginIcon}
                                 ${isLoading ? 'Loading...' : 'Verify Key & Login'}
                             </button>
                         </form>
@@ -729,6 +695,41 @@
                 </div>
             `;
         };
+
+
+        // --- Core Render Function ---
+        
+        const renderApp = () => {
+            const appDiv = document.getElementById('app');
+            
+            // 1. Bind global functions for inline HTML event handlers (CRITICAL)
+            window.handleFilterChange = handleFilterChange;
+            window.openAddForm = openAddForm;
+            window.openEditForm = openEditForm;
+            window.closeForm = closeForm;
+            window.handleDeleteStudent = handleDeleteStudent;
+            window.handleFormSubmit = handleFormSubmit;
+            window.handleLogin = handleLogin;
+            window.handleLogout = handleLogout;
+            
+            let mainContent;
+
+            // 2. Determine Auth State and Render
+            if (isAuthenticated) {
+                 mainContent = `
+                    ${renderHeader()}
+                    ${renderAlert()}
+                    ${renderControls()}
+                    ${renderTable()}
+                    ${isFormOpen ? renderFormModal() : ''}
+                `;
+            } else {
+                 mainContent = renderLoginModal();
+            }
+            
+            appDiv.innerHTML = mainContent;
+        };
+
 
         // --- Final Execution ---
         
