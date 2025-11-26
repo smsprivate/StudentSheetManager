@@ -26,7 +26,7 @@
 </head>
 <body>
     <div id="app" class="min-h-screen p-4 sm:p-8">
-        <!-- Application will be rendered here by JavaScript -->
+        <!-- Initial Loading State (to be replaced by JS) -->
         <div class="flex items-center justify-center h-screen text-indigo-600">
              <svg class="animate-spin -ml-1 mr-3 h-10 w-10 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
             <p class="text-xl font-medium">Starting Application...</p>
@@ -320,41 +320,7 @@
             handleSaveStudent(data);
         };
 
-        // --- Core Render Function ---
-        
-        const renderApp = () => {
-            const appDiv = document.getElementById('app');
-            
-            // Re-bind global functions for inline HTML event handlers
-            window.handleFilterChange = handleFilterChange;
-            window.openAddForm = openAddForm;
-            window.openEditForm = openEditForm;
-            window.closeForm = closeForm;
-            window.handleDeleteStudent = handleDeleteStudent;
-            window.handleFormSubmit = handleFormSubmit;
-            window.handleLogin = handleLogin;
-            window.handleLogout = handleLogout;
-            
-            let mainContent;
-
-            if (isAuthenticated) {
-                 // --- RENDER DASHBOARD ---
-                mainContent = `
-                    ${renderHeader()}
-                    ${renderAlert()}
-                    ${renderControls()}
-                    ${renderTable()}
-                    ${isFormOpen ? renderFormModal() : ''}
-                `;
-            } else {
-                 // --- RENDER LOGIN SCREEN ---
-                mainContent = renderLoginModal();
-            }
-            
-            appDiv.innerHTML = mainContent;
-        };
-
-        // --- Rendering Helpers (MUST be defined before renderApp is called) ---
+        // --- Rendering Helpers (Functions defined inline for direct template use) ---
 
         const renderImageDisplay = (url, type, className, style) => {
             const finalUrl = getImageUrl(url);
@@ -395,6 +361,59 @@
             return container.outerHTML;
         };
 
+        // All subsequent render functions (renderTable, renderHeader, renderLoginModal, etc.) are complex string templates
+        // and need the utility functions (like getIcon) to be globally accessible for the event handlers. 
+        // We will define them as nested templates to ensure scope closure.
+
+        const renderControls = () => {
+            const searchIcon = getIcon('Search', 'w-5 h-5 text-indigo-400');
+            const plusIcon = getIcon('Plus', 'w-5 h-5 mr-2');
+
+            return `
+                <div class="bg-white p-6 rounded-2xl shadow-lg mb-8 border border-gray-100">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="md:col-span-2">
+                            <label for="search" class="block text-sm font-medium text-gray-700">Quick Search</label>
+                            <div class="relative mt-1">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    ${searchIcon ? searchIcon.outerHTML : ''}
+                                </div>
+                                <input id="search" type="text" value="${searchTerm}" oninput="handleFilterChange(event)"
+                                    placeholder="Search ID, Name, Roll No, or Phone No..." 
+                                    class="w-full p-2 pl-10 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition duration-150 ease-in-out shadow-inner"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="filterClass" class="block text-sm font-medium text-gray-700">Filter by Class</label>
+                            <select id="filterClass" value="${filterClass}" onchange="handleFilterChange(event)"
+                                class="mt-1 block w-full py-2.5 px-3 border-2 border-gray-300 bg-white rounded-xl shadow-inner focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                                <option value="ALL">-- All Classes --</option>
+                                ${CLASS_OPTIONS.map(c => `<option value="${c}" ${filterClass === c ? 'selected' : ''}>Class ${c}</option>`).join('')}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="filterSection" class="block text-sm font-medium text-gray-700">Filter by Section</label>
+                            <select id="filterSection" value="${filterSection}" onchange="handleFilterChange(event)"
+                                class="mt-1 block w-full py-2.5 px-3 border-2 border-gray-300 bg-white rounded-xl shadow-inner focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                                <option value="ALL">-- All Sections --</option>
+                                ${SECTION_OPTIONS.map(s => `<option value="${s}" ${filterSection === s ? 'selected' : ''}>${s}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end mt-5">
+                        <button onclick="openAddForm()" class="btn-shadow px-4 py-2 rounded-xl text-sm font-semibold transition duration-300 ease-in-out flex items-center justify-center shadow-lg hover:shadow-xl bg-green-600 text-white hover:bg-green-700 focus:ring-4 focus:ring-green-500/50">
+                            ${plusIcon ? plusIcon.outerHTML : ''}
+                            Add New Student Record
+                        </button>
+                    </div>
+                </div>
+            `;
+        };
+        
         const renderTable = () => {
             const filtered = students.filter(s => {
                 const searchMatch = searchTerm.toLowerCase();
@@ -537,50 +556,58 @@
             `;
         };
 
-        const renderControls = () => {
-            const searchIcon = getIcon('Search', 'w-5 h-5 text-indigo-400');
-            const plusIcon = getIcon('Plus', 'w-5 h-5 mr-2');
+        const renderLoginModal = () => {
+            const mailIcon = getIcon('Mail', 'w-5 h-5 mr-2');
+            const lockIcon = getIcon('Lock', 'w-5 h-5 mr-2');
+            const keyIcon = getIcon('Key', 'w-10 h-10 text-indigo-500 mb-4');
+            const loadingIcon = getIcon('Loader2', 'w-5 h-5 mr-2 animate-spin');
+
+            let alertClass = 'bg-gray-50 text-gray-700 border-gray-200';
+            if (loginStatus.message.includes('Invalid') || loginStatus.message.includes('denied') || loginStatus.message.includes('error')) {
+                 alertClass = 'bg-red-100 text-red-700 border-red-400';
+            } else if (loginStatus.message.includes('successful')) {
+                 alertClass = 'bg-green-100 text-green-700 border-green-400';
+            }
+
 
             return `
-                <div class="bg-white p-6 rounded-2xl shadow-lg mb-8 border border-gray-100">
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div class="md:col-span-2">
-                            <label for="search" class="block text-sm font-medium text-gray-700">Quick Search</label>
-                            <div class="relative mt-1">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    ${searchIcon ? searchIcon.outerHTML : ''}
-                                </div>
-                                <input id="search" type="text" value="${searchTerm}" oninput="handleFilterChange(event)"
-                                    placeholder="Search ID, Name, Roll No, or Phone No..." 
-                                    class="w-full p-2 pl-10 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition duration-150 ease-in-out shadow-inner"
+                <div class="fixed inset-0 bg-gray-900/90 z-50 flex items-center justify-center p-4">
+                    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 text-center transition-all duration-300 transform scale-100 border-t-8 border-indigo-600">
+                        ${keyIcon ? keyIcon.outerHTML : ''}
+                        <h2 class="text-3xl font-extrabold text-gray-900 mb-2">Admin Access Required</h2>
+                        <p class="text-gray-500 mb-6">Enter your Admin Secret Key to proceed.</p>
+                        
+                        <div class="p-3 mb-6 rounded-xl border ${alertClass}">
+                            <p class="text-sm font-medium">
+                                ${loginStatus.message}
+                            </p>
+                        </div>
+
+                        <form onsubmit="handleLogin(event)">
+                            <div class="relative mb-4">
+                                <input id="admin-email" type="email" value="${ADMIN_EMAIL}" readonly 
+                                    class="w-full p-3 pl-12 border-2 border-gray-300 bg-gray-100 rounded-xl text-lg font-mono text-gray-800 focus:outline-none cursor-not-allowed" 
                                 />
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    ${mailIcon ? mailIcon.outerHTML : ''}
+                                </div>
                             </div>
-                        </div>
 
-                        <div>
-                            <label for="filterClass" class="block text-sm font-medium text-gray-700">Filter by Class</label>
-                            <select id="filterClass" value="${filterClass}" onchange="handleFilterChange(event)"
-                                class="mt-1 block w-full py-2.5 px-3 border-2 border-gray-300 bg-white rounded-xl shadow-inner focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
-                                <option value="ALL">-- All Classes --</option>
-                                ${CLASS_OPTIONS.map(c => `<option value="${c}" ${filterClass === c ? 'selected' : ''}>Class ${c}</option>`).join('')}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label for="filterSection" class="block text-sm font-medium text-gray-700">Filter by Section</label>
-                            <select id="filterSection" value="${filterSection}" onchange="handleFilterChange(event)"
-                                class="mt-1 block w-full py-2.5 px-3 border-2 border-gray-300 bg-white rounded-xl shadow-inner focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
-                                <option value="ALL">-- All Sections --</option>
-                                ${SECTION_OPTIONS.map(s => `<option value="${s}" ${filterSection === s ? 'selected' : ''}>${s}</option>`).join('')}
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="flex justify-end mt-5">
-                        <button onclick="openAddForm()" class="btn-shadow px-4 py-2 rounded-xl text-sm font-semibold transition duration-300 ease-in-out flex items-center justify-center shadow-lg hover:shadow-xl bg-green-600 text-white hover:bg-green-700 focus:ring-4 focus:ring-green-500/50">
-                            ${plusIcon ? plusIcon.outerHTML : ''}
-                            Add New Student Record
-                        </button>
+                            <div class="relative mb-6">
+                                <input id="secret-key" type="password" placeholder="Enter Secret Key" required
+                                    class="w-full p-3 pl-12 border-2 border-indigo-300 rounded-xl text-lg text-gray-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition" 
+                                />
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    ${lockIcon ? lockIcon.outerHTML : ''}
+                                </div>
+                                <p class="text-xs text-gray-500 mt-2 text-left">The default key is <span class="font-bold admin-email-text">AdminSecretKey2025!</span></p>
+                            </div>
+                            
+                            <button type="submit" class="btn-shadow w-full py-3 bg-indigo-600 text-white hover:bg-indigo-700 flex items-center justify-center rounded-xl text-lg font-semibold" ${isLoading ? 'disabled' : ''}>
+                                ${isLoading ? loadingIcon.outerHTML : (getIcon('LogIn', 'w-5 h-5 mr-2').outerHTML)}
+                                ${isLoading ? 'Loading...' : 'Verify Key & Login'}
+                            </button>
+                        </form>
                     </div>
                 </div>
             `;
@@ -681,14 +708,17 @@
         };
 
 
-        // --- Execute Initial Render ---
+        // --- Final Execution ---
         
-        // This ensures all functions are defined before we try to use them in the asynchronous path.
+        // 1. Immediately call the initial render to show the Login Screen or Dashboard.
+        renderApp();
+
+        // 2. Load data asynchronously if authenticated.
         if (isAuthenticated) {
             loadStudents(); 
+            // 3. Set up data polling only after the application starts.
             setInterval(loadStudents, 20000); 
         }
-        renderApp();
 
     </script>
 </body>
