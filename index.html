@@ -26,20 +26,23 @@
 </head>
 <body>
     <div id="app" class="min-h-screen p-4 sm:p-8">
-        <!-- Application will be rendered here -->
+        <!-- Application will be rendered here by JavaScript -->
+        <div class="flex items-center justify-center h-screen text-indigo-600">
+             <svg class="animate-spin -ml-1 mr-3 h-10 w-10 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            <p class="text-xl font-medium">Starting Application...</p>
+        </div>
     </div>
 
     <script type="module">
         
         // --- SECURE AUTH CONFIGURATION ---
         const ADMIN_EMAIL = 'beloyal.edu@gmail.com';
-        // HASH of "AdminSecretKey2025!" using SHA-256 in HEX format.
-        // To update the password, hash your new password using SHA-256 and replace this value.
+        // HASH of "AdminSecretKey2025!" using SHA-256
         const SECRET_KEY_HASH = 'b16751280598822005e838e0f10c69d80c3555231908465053e1cc648354c25f'; 
 
         // --- GOOGLE SHEET CONFIGURATION ---
         const GOOGLE_SHEET_API_URL = 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE'; 
-        const USE_MOCK_DATA = GOOGLE_SHEET_API_URL === 'YOUR_GOOGLE_SHEET_API_URL_HERE';
+        const USE_MOCK_DATA = GOOGLE_SHEET_API_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE';
         
         // --- Core Application State ---
         const CLASS_OPTIONS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
@@ -52,7 +55,7 @@
         let students = [];
         let isAuthenticated = localStorage.getItem('isAdminAuthenticated') === 'true'; 
         let error = null;
-        let isLoading = true;
+        let isLoading = isAuthenticated; 
         let isFormOpen = false;
         let isSaving = false;
         let currentStudent = null;
@@ -80,7 +83,6 @@
             return tempDiv.firstChild;
         };
 
-        // Secure Hashing Function (Web Crypto API)
         const hashSecretKey = async (key) => {
             const encoder = new TextEncoder();
             const data = encoder.encode(key);
@@ -323,7 +325,7 @@
         const renderApp = () => {
             const appDiv = document.getElementById('app');
             
-            // Re-bind global functions
+            // Re-bind global functions for inline HTML event handlers
             window.handleFilterChange = handleFilterChange;
             window.openAddForm = openAddForm;
             window.openEditForm = openEditForm;
@@ -333,84 +335,66 @@
             window.handleLogin = handleLogin;
             window.handleLogout = handleLogout;
             
+            let mainContent;
+
             if (isAuthenticated) {
                  // --- RENDER DASHBOARD ---
-                const mainContent = `
+                mainContent = `
                     ${renderHeader()}
                     ${renderAlert()}
                     ${renderControls()}
                     ${renderTable()}
                     ${isFormOpen ? renderFormModal() : ''}
                 `;
-                appDiv.innerHTML = mainContent;
             } else {
                  // --- RENDER LOGIN SCREEN ---
-                const loginContent = renderLoginModal();
-                appDiv.innerHTML = loginContent;
+                mainContent = renderLoginModal();
             }
+            
+            appDiv.innerHTML = mainContent;
         };
 
-        // --- Login Modal Renderer ---
+        // --- Rendering Helpers (MUST be defined before renderApp is called) ---
 
-        const renderLoginModal = () => {
-            const mailIcon = getIcon('Mail', 'w-5 h-5 mr-2');
-            const lockIcon = getIcon('Lock', 'w-5 h-5 mr-2');
-            const keyIcon = getIcon('Key', 'w-10 h-10 text-indigo-500 mb-4');
-            const loadingIcon = getIcon('Loader2', 'w-5 h-5 mr-2 animate-spin');
+        const renderImageDisplay = (url, type, className, style) => {
+            const finalUrl = getImageUrl(url);
+            const iconName = type === 'photo' ? 'User' : 'Zap';
 
-            let alertClass = 'bg-gray-50 text-gray-700 border-gray-200';
-            if (loginStatus.message.includes('Invalid') || loginStatus.message.includes('denied') || loginStatus.message.includes('error')) {
-                 alertClass = 'bg-red-100 text-red-700 border-red-400';
-            } else if (loginStatus.message.includes('successful')) {
-                 alertClass = 'bg-green-100 text-green-700 border-green-400';
+            const container = document.createElement('div');
+            container.className = `${className} bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center text-xs text-gray-500 overflow-hidden`;
+            
+            const img = document.createElement('img');
+            img.src = finalUrl;
+            img.alt = `${type} of student`;
+            img.className = className.replace('flex items-center justify-center text-xs text-gray-500', '') + ' object-cover';
+            img.style.cssText = style || '';
+            img.loading = 'lazy';
+            
+            let errorFlag = false;
+            
+            img.onerror = () => {
+                if (!errorFlag) {
+                    errorFlag = true;
+                    container.innerHTML = '';
+                    const icon = getIcon(iconName, 'w-5 h-5');
+                    if (icon) container.appendChild(icon);
+                    else container.textContent = type === 'photo' ? 'P' : 'S';
+                    container.classList.add('p-1');
+                }
+            };
+
+            if (url && url.length > 5) {
+                container.appendChild(img);
+            } else {
+                const icon = getIcon(iconName, 'w-5 h-5');
+                if (icon) container.appendChild(icon);
+                else container.textContent = type === 'photo' ? 'P' : 'S';
+                container.classList.add('p-1');
             }
 
-
-            return `
-                <div class="fixed inset-0 bg-gray-900/90 z-50 flex items-center justify-center p-4">
-                    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 text-center transition-all duration-300 transform scale-100 border-t-8 border-indigo-600">
-                        ${keyIcon ? keyIcon.outerHTML : ''}
-                        <h2 class="text-3xl font-extrabold text-gray-900 mb-2">Admin Access Required</h2>
-                        <p class="text-gray-500 mb-6">Enter your Admin Secret Key to proceed.</p>
-                        
-                        <div class="p-3 mb-6 rounded-xl border ${alertClass}">
-                            <p class="text-sm font-medium">
-                                ${loginStatus.message}
-                            </p>
-                        </div>
-
-                        <form onsubmit="handleLogin(event)">
-                            <div class="relative mb-4">
-                                <input id="admin-email" type="email" value="${ADMIN_EMAIL}" readonly 
-                                    class="w-full p-3 pl-12 border-2 border-gray-300 bg-gray-100 rounded-xl text-lg font-mono text-gray-800 focus:outline-none cursor-not-allowed" 
-                                />
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    ${mailIcon ? mailIcon.outerHTML : ''}
-                                </div>
-                            </div>
-
-                            <div class="relative mb-6">
-                                <input id="secret-key" type="password" placeholder="Enter Secret Key" required
-                                    class="w-full p-3 pl-12 border-2 border-indigo-300 rounded-xl text-lg text-gray-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition" 
-                                />
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    ${lockIcon ? lockIcon.outerHTML : ''}
-                                </div>
-                                <p class="text-xs text-gray-500 mt-2 text-left">The default key is <span class="font-bold admin-email-text">AdminSecretKey2025!</span></p>
-                            </div>
-                            
-                            <button type="submit" class="btn-shadow w-full py-3 bg-indigo-600 text-white hover:bg-indigo-700 flex items-center justify-center rounded-xl text-lg font-semibold" ${isLoading ? 'disabled' : ''}>
-                                ${isLoading ? loadingIcon.outerHTML : (getIcon('LogIn', 'w-5 h-5 mr-2').outerHTML)}
-                                ${isLoading ? 'Loading...' : 'Verify Key & Login'}
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            `;
+            return container.outerHTML;
         };
-        
-        // --- Full Render Sub-components (Table, Form, etc.) ---
-        
+
         const renderTable = () => {
             const filtered = students.filter(s => {
                 const searchMatch = searchTerm.toLowerCase();
@@ -686,7 +670,7 @@
                             <div class="md:col-span-2 flex justify-end space-x-3 pt-6 border-t mt-4 border-gray-200">
                                 <button type="button" onclick="closeForm()" class="btn-shadow bg-gray-200 text-gray-800 hover:bg-gray-300">Cancel</button>
                                 <button type="submit" ${buttonDisabled} class="btn-shadow ${isSaving ? 'opacity-60 cursor-not-allowed' : ''} px-4 py-2 rounded-xl text-sm font-semibold transition duration-300 ease-in-out flex items-center justify-center shadow-lg hover:shadow-xl bg-indigo-600 text-white hover:bg-indigo-700">
-                                    ${isSaving ? getIcon('Loader2', 'w-5 h-5 animate-spin mr-1').outerHTML : (isEditMode ? editIcon.outerHTML : plusIcon.outerHTML)}
+                                    ${isSaving ? getIcon('Loader2', 'w-5 h-5 animate-spin mr-1').outerHTML : (isEditMode ? getIcon('Edit', 'w-5 h-5 mr-1').outerHTML : getIcon('Plus', 'w-5 h-5 mr-1').outerHTML)}
                                     ${isSaving ? 'Saving...' : (isEditMode ? 'Update Record' : 'Add Record')}
                                 </button>
                             </div>
@@ -696,159 +680,16 @@
             `;
         };
 
-        const renderControls = () => {
-            const searchIcon = getIcon('Search', 'w-5 h-5 text-indigo-400');
-            const plusIcon = getIcon('Plus', 'w-5 h-5 mr-2');
 
-            return `
-                <div class="bg-white p-6 rounded-2xl shadow-lg mb-8 border border-gray-100">
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div class="md:col-span-2">
-                            <label for="search" class="block text-sm font-medium text-gray-700">Quick Search</label>
-                            <div class="relative mt-1">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    ${searchIcon ? searchIcon.outerHTML : ''}
-                                </div>
-                                <input id="search" type="text" value="${searchTerm}" oninput="handleFilterChange(event)"
-                                    placeholder="Search ID, Name, Roll No, or Phone No..." 
-                                    class="w-full p-2 pl-10 border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition duration-150 ease-in-out shadow-inner"
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label for="filterClass" class="block text-sm font-medium text-gray-700">Filter by Class</label>
-                            <select id="filterClass" value="${filterClass}" onchange="handleFilterChange(event)"
-                                class="mt-1 block w-full py-2.5 px-3 border-2 border-gray-300 bg-white rounded-xl shadow-inner focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
-                                <option value="ALL">-- All Classes --</option>
-                                ${CLASS_OPTIONS.map(c => `<option value="${c}" ${filterClass === c ? 'selected' : ''}>Class ${c}</option>`).join('')}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label for="filterSection" class="block text-sm font-medium text-gray-700">Filter by Section</label>
-                            <select id="filterSection" value="${filterSection}" onchange="handleFilterChange(event)"
-                                class="mt-1 block w-full py-2.5 px-3 border-2 border-gray-300 bg-white rounded-xl shadow-inner focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
-                                <option value="ALL">-- All Sections --</option>
-                                ${SECTION_OPTIONS.map(s => `<option value="${s}" ${filterSection === s ? 'selected' : ''}>${s}</option>`).join('')}
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="flex justify-end mt-5">
-                        <button onclick="openAddForm()" class="btn-shadow px-4 py-2 rounded-xl text-sm font-semibold transition duration-300 ease-in-out flex items-center justify-center shadow-lg hover:shadow-xl bg-green-600 text-white hover:bg-green-700 focus:ring-4 focus:ring-green-500/50">
-                            ${plusIcon ? plusIcon.outerHTML : ''}
-                            Add New Student Record
-                        </button>
-                    </div>
-                </div>
-            `;
-        };
-
-        const renderFormInput = (label, id, value, placeholder, required, icon, disabled = false, type = 'text', className = '') => {
-            const iconHtml = icon ? `<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">${icon.outerHTML}</div>` : '';
-            const padding = icon ? 'pl-10' : 'pl-3';
-            const disabledClass = disabled ? 'bg-gray-100 cursor-not-allowed' : '';
-            
-            return `
-                <div class="flex flex-col space-y-1 ${className}">
-                    <label for="${id}" class="text-sm font-medium text-gray-700">${label} ${required ? '<span class="text-red-500">*</span>' : ''}</label>
-                    <div class="relative">
-                        ${iconHtml}
-                        <input id="${id}" type="${type}" value="${value || ''}" placeholder="${placeholder}" ${required ? 'required' : ''} ${disabled ? 'disabled' : ''}
-                            class="w-full p-2 ${padding} border-2 border-gray-300 rounded-xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition duration-150 ease-in-out shadow-inner ${disabledClass}"
-                        >
-                    </div>
-                </div>
-            `;
-        };
-
-        const renderFormSelect = (label, id, value, options, className = '') => {
-            return `
-                <div class="flex flex-col space-y-1 ${className}">
-                    <label for="${id}" class="text-sm font-medium text-gray-700">${label}</label>
-                    <select id="${id}"
-                        class="mt-1 block w-full py-2.5 px-3 border-2 border-gray-300 bg-white rounded-xl shadow-inner focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
-                        ${options.map(o => `<option value="${o.value}" ${value === o.value ? 'selected' : ''}>${o.label}</option>`).join('')}
-                    </select>
-                </div>
-            `;
-        };
-
-        const renderFormModal = () => {
-            if (!isFormOpen) return '';
-            
-            const student = currentStudent;
-            const isEditMode = !!student.id && students.some(s => s.id === student.id);
-            const title = isEditMode ? 'Edit Student Record' : 'Add New Student';
-            
-            const studentIcon = getIcon('GraduationCap', 'w-5 h-5 text-indigo-400');
-            const userIcon = getIcon('User', 'w-5 h-5 text-indigo-400');
-            const zapIcon = getIcon('Zap', 'w-5 h-5 text-indigo-400');
-            const calendarIcon = getIcon('Calendar', 'w-5 h-5 text-indigo-400');
-            const hardhatIcon = getIcon('HardHat', 'w-5 h-5 text-indigo-400');
-            const phoneIcon = getIcon('Phone', 'w-5 h-5 text-indigo-400');
-            const mailIcon = getIcon('Mail', 'w-5 h-5 text-indigo-400');
-            const editIcon = getIcon('Edit', 'w-5 h-5 mr-1');
-            const plusIcon = getIcon('Plus', 'w-5 h-5 mr-1');
-            const closeIcon = getIcon('X', 'w-6 h-6');
-
-            const selectOptionsClass = CLASS_OPTIONS.map(c => ({ value: c, label: `Class ${c}` }));
-            const selectOptionsSection = SECTION_OPTIONS.map(s => ({ value: s, label: s }));
-
-            const buttonDisabled = isSaving ? 'disabled' : '';
-            
-            return `
-                <div id="modal-backdrop" class="fixed inset-0 bg-gray-900/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-                    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[95vh] overflow-y-auto p-6 transition-all duration-300 transform scale-100 opacity-100 border-t-8 border-indigo-600 ring-4 ring-indigo-500/10">
-                        <div class="flex justify-between items-start mb-6 border-b pb-3">
-                            <h2 class="text-3xl font-extrabold text-indigo-700">${title}</h2>
-                            <button type="button" onclick="closeForm()" class="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition duration-150 shadow-md">
-                                ${closeIcon ? closeIcon.outerHTML : ''}
-                            </button>
-                        </div>
-
-                        <form id="student-form" onsubmit="handleFormSubmit(event)" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            ${renderFormInput('Student ID', 'studentId', student.studentId, 'Unique Student ID', true, studentIcon, isEditMode)}
-                            ${renderFormInput('Student Name', 'studentName', student.studentName, 'Full Name', true, userIcon)}
-
-                            ${renderFormInput('Roll No', 'rollNo', student.rollNo, 'Roll Number', false, zapIcon)}
-                            ${renderFormInput('Date of Birth', 'dateOfBirth', student.dateOfBirth, '', false, calendarIcon, false, 'date')}
-
-                            ${renderFormSelect('Class', 'className', student.className, selectOptionsClass)}
-                            ${renderFormSelect('Section', 'section', student.section, selectOptionsSection)}
-
-                            ${renderFormInput("Father's Name", 'fatherName', student.fatherName, "Father's Name", false, hardhatIcon)}
-                            ${renderFormInput('Phone Number', 'phoneNumber', student.phoneNumber, 'e.g., 919876543210', false, phoneIcon, false, 'tel')}
-                            
-                            ${renderFormInput('Email ID', 'emailId', student.emailId, 'student@example.com', false, mailIcon, false, 'email', 'md:col-span-2')}
-
-                            ${renderFormInput('Photo URL (Google Drive/Public)', 'photoUrl', student.photoUrl, 'Must be a direct/public URL', false, null, false, 'url', 'md:col-span-2')}
-                            ${renderFormInput('Signature URL (Google Drive/Public)', 'signatureUrl', student.signatureUrl, 'Must be a direct/public URL', false, null, false, 'url', 'md:col-span-2')}
-
-                            <div class="md:col-span-2 flex justify-end space-x-3 pt-6 border-t mt-4 border-gray-200">
-                                <button type="button" onclick="closeForm()" class="btn-shadow bg-gray-200 text-gray-800 hover:bg-gray-300">Cancel</button>
-                                <button type="submit" ${buttonDisabled} class="btn-shadow ${isSaving ? 'opacity-60 cursor-not-allowed' : ''} px-4 py-2 rounded-xl text-sm font-semibold transition duration-300 ease-in-out flex items-center justify-center shadow-lg hover:shadow-xl bg-indigo-600 text-white hover:bg-indigo-700">
-                                    ${isSaving ? getIcon('Loader2', 'w-5 h-5 animate-spin mr-1').outerHTML : (isEditMode ? editIcon.outerHTML : plusIcon.outerHTML)}
-                                    ${isSaving ? 'Saving...' : (isEditMode ? 'Update Record' : 'Add Record')}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            `;
-        };
-        
         // --- Execute Initial Render ---
         
-        window.onload = function() {
-            // Load students if already authenticated (from local storage)
-            if (isAuthenticated) {
-                loadStudents();
-                setInterval(loadStudents, 20000); // Polling for data updates
-            }
-            renderApp();
-        };
+        // This ensures all functions are defined before we try to use them in the asynchronous path.
+        if (isAuthenticated) {
+            loadStudents(); 
+            setInterval(loadStudents, 20000); 
+        }
+        renderApp();
+
     </script>
 </body>
 </html>
